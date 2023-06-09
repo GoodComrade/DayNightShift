@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(PlayerInput))]
 public class PlayerViewMover : MonoBehaviour
 {
     private PlayerInput _playerInput;
@@ -46,7 +47,8 @@ public class PlayerViewMover : MonoBehaviour
         Vector3 movement = new Vector3(direction.x, 0, direction.y);
         transform.Translate(movement * _moveSpeed * Time.deltaTime, Space.World);
 
-        if (movement != Vector3.zero)
-            transform.rotation = Quaternion.LookRotation(movement, Vector3.up);
+        //Когда будут готовы спрайты, реализовать через них поворот игрока
+        /*if (movement != Vector3.zero)
+            transform.rotation = Quaternion.LookRotation(movement, Vector3.up);*/
     }
 }

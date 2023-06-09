@@ -6,29 +6,24 @@ using DG.Tweening;
 [RequireComponent(typeof(MeshRenderer))]
 public class PropTransparenter : MonoBehaviour
 {
+    public Material Material { get; private set; }
+
+    private static readonly int Transparency = Shader.PropertyToID("_Color");
+
     private const float MaxTransparencyValue = 1f;
-
-    private static readonly int Transparency = Shader.PropertyToID("_Transparency");
-
-    public string DetectedProp { get; set; }
 
     private float _transparentingDuration;
     private float _minTransparencyValue;
 
-    private Material _material;
+    private MeshRenderer _meshRenderer;
 
-
+    private Tween RevealTween;
+    private Tween UnRevealTween;
     private void Awake()
     {
-        _material = GetComponent<MeshRenderer>().material;
-    }
+        _meshRenderer = GetComponent<MeshRenderer>();
+        Material = _meshRenderer.material;
 
-    private void Update()
-    {
-        if (DetectedProp == gameObject.name)
-            Reveal();
-        else
-            UnReveal();
     }
 
     public void SetParams(float minTransparencyValue, float transparentingDuration)
@@ -37,17 +32,53 @@ public class PropTransparenter : MonoBehaviour
         _transparentingDuration = transparentingDuration;
     }
 
-    public void SetDetectedProp(string value) => DetectedProp = value;
-
-    private void Reveal()
+    public void Reveal()
     {
-        _material.DOFade(_minTransparencyValue, _transparentingDuration / 2);
+        if (Material.color.a >= 1f)
+            return;
+
+        if (UnRevealTween != null)
+            UnRevealTween.Kill();
+
+        RevealTween = Material.DOFade(MaxTransparencyValue, Transparency, _transparentingDuration);
     }
 
-    private void UnReveal()
+    public void UnReveal()
     {
-        _material.DOFade(MaxTransparencyValue, _transparentingDuration);
+        if (Material.color.a <= _minTransparencyValue)
+            return;
+
+        if (RevealTween != null)
+            RevealTween.Pause();
+
+        UnRevealTween = Material.DOFade(_minTransparencyValue, Transparency, _transparentingDuration);
     }
 
+    public void RevealWithRendererEnable()
+    {
+        if (Material.color.a >= 1f)
+            return;
+
+        if (UnRevealTween != null)
+            UnRevealTween.Kill();
+
+        EnableRenderer();
+        RevealTween = Material.DOFade(MaxTransparencyValue, Transparency, _transparentingDuration);
+    }
+
+    public void UnRevealWithRendererDisable()
+    {
+        if (Material.color.a <= _minTransparencyValue)
+            return;
+
+        if (RevealTween != null)
+            RevealTween.Pause();
+
+        UnRevealTween = Material.DOFade(_minTransparencyValue, Transparency, _transparentingDuration).OnComplete(DisaberlRenderer);
+    }
+
+    public void DisaberlRenderer() => _meshRenderer.enabled = false;
+
+    public void EnableRenderer() => _meshRenderer.enabled = true;
 
 }
