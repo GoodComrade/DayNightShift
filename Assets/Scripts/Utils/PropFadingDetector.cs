@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -7,23 +6,31 @@ using UnityEngine.Events;
 [RequireComponent(typeof(CameraFollow))]
 public class PropFadingDetector : MonoBehaviour
 {
-    [SerializeField]
-    private List<GameObject> _propsObjects;
+    public event UnityAction<string> OnPropDetection;
 
+    [SerializeField]
+    private float _transparentingDuration;
+    [SerializeField]
+    private float _minTransparencyValue;
+    [SerializeField]
     private List<PropTransparenter> _propsTransparenters = new List<PropTransparenter>();
 
     private Transform _target;
     private RaycastHit _hit;
+    private string _lastDetectedProp;
 
     private void Awake()
     {
-        
+        foreach(var prop in _propsTransparenters)
+        {
+            OnPropDetection += prop.SetDetectedProp;
+            prop.SetParams(_minTransparencyValue, _transparentingDuration);
+        }
     }
+
     void Start()
     {
         _target = GetComponent<CameraFollow>().Target;
-        foreach (var prop in _propsObjects)
-            _propsTransparenters.Add(prop.GetComponent<PropTransparenter>());
     }
 
     //попробуй переделать это на события, где если имя объекта не совпадает, то и прозрачность не выставляется
@@ -34,18 +41,20 @@ public class PropFadingDetector : MonoBehaviour
 
         if (Physics.Raycast(transform.position, rayDirection, out _hit))
         {
-            Debug.DrawRay(_target.position, transform.position, Color.red);
-
-            if (_hit.collider.gameObject.name != _target.gameObject.name)
+            if(_hit.collider.gameObject.name != _target.gameObject.name)
             {
-                var detectedProp = _propsTransparenters.First(prop => prop.gameObject.name == _hit.collider.gameObject.name);
-                detectedProp.SetDetectedProp(_hit.collider.gameObject.name);
+                if(_hit.collider.gameObject.name != _lastDetectedProp)
+                {
+                    OnPropDetection.Invoke(_hit.collider.gameObject.name);
+                    _lastDetectedProp = _hit.collider.gameObject.name;
+                }
             }
-            else
+            
+            if(_hit.collider.gameObject.name == _target.gameObject.name && _hit.collider.gameObject.name != _lastDetectedProp)
             {
-                _propsTransparenters.ForEach(prop => prop.SetDetectedProp(_target.gameObject.name));
+                OnPropDetection.Invoke(_hit.collider.gameObject.name);
+                _lastDetectedProp = _target.gameObject.name;
             }
-            //OnPropBetween.Invoke(_hit.collider.gameObject.name);
         }
     }
 }
