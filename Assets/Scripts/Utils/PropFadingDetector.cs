@@ -13,6 +13,9 @@ public class PropFadingDetector : MonoBehaviour
     [SerializeField]
     private List<PropTransparenter> _propsTransparenters = new List<PropTransparenter>();
 
+    [SerializeField]
+    private List<GameObject> _propsToIgnore = new List<GameObject>();
+
     private RaycastHit _hit;
     private string _lastDetectedProp;
 
@@ -30,15 +33,14 @@ public class PropFadingDetector : MonoBehaviour
 
     }
 
-    //попробуй переделать это на события, где если имя объекта не совпадает, то и прозрачность не выставляется
-
     void Update()
     {
-
-        Debug.Log(_lastDetectedProp);
         if (Physics.Raycast(transform.position, -Vector3.forward, out _hit, 1f))
         {
             Debug.DrawRay(transform.position, -transform.forward, Color.red);
+
+            if (_propsToIgnore.Any(prop => prop.name == _hit.collider.gameObject.name))
+                return;
 
             if (_hit.collider.gameObject.name != _lastDetectedProp)
             {
@@ -49,19 +51,10 @@ public class PropFadingDetector : MonoBehaviour
                     return;
                 }
 
-
                 _propsTransparenters.First(prop => prop.gameObject.name == _lastDetectedProp).Reveal();
                 _propsTransparenters.First(prop => prop.gameObject.name == _hit.collider.gameObject.name).UnReveal();
                 _lastDetectedProp = _hit.collider.gameObject.name;
-                //OnPropDetection.Invoke(_hit.collider.gameObject.name);
-
             }
-
-            /*if (_hit.collider.gameObject.name == _target.gameObject.name && _hit.collider.gameObject.name != _lastDetectedProp)
-            {
-                OnPropDetection.Invoke(_hit.collider.gameObject.name);
-                _lastDetectedProp = _target.gameObject.name;
-            }*/
         }
         else
         {
